@@ -22,14 +22,28 @@ module "dev_infrastructure_hpcs" {
 ```
 
 # Here are the steps to initialize(Key ceremony) of HPCS
-Please refer https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-initialize-hsm for more detail:
 
-## Install TKE CLI plun-in
-### ibmcloud plugin install tke
-           or
-### ibmcloud plugin update tke
+The following provides a summary of the steps required to initialize the Hyper Protect instance. Please refer https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-initialize-hsm for more detail.
 
-Set the environment variable CLOUDTKEFILES on your workstation to specify the directory where you want to save the master key part files and signature key files. The signature keys are used to sign TKE administrative commands.
+![HPCS initialization](https://cloud.ibm.com/docs-content/v1/content/eaa381661ad91d7720185625ae7b5a047a6dc41c/hs-crypto//image/hsm_initialization_flow.svg)
+
+## Install the TKE CLI plug-in
+
+Install the `tke` plug-in to the IBM Cloud cli:
+
+```shell
+ibmcloud plugin install tke
+```
+
+**Note:** If you have previously installed the plug-in you can update to the latest with the following:
+
+```shell
+ibmcloud plugin update tke
+```
+
+## Set up the TKE environment
+
+Set the environment variable `CLOUDTKEFILES` on your workstation to specify the directory where you want to save the master key part files and signature key files. The signature keys are used to sign TKE administrative commands.
 
     On the Linux® operating system or MacOS, add the following line to the .bash_profile file:
 
