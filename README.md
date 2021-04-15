@@ -1,6 +1,6 @@
 # HPCS terraform module
 
-Provisions an instance of hpcs in the account.
+Provisions an instance of Hyper Protect Crypto Service (HPCS) in the account.
 
 ## Example usage
 
@@ -21,15 +21,15 @@ module "dev_infrastructure_hpcs" {
 }
 ```
 
-# Here are the steps to initialize(Key ceremony) of HPCS
+## Post-provisioning steps
 
-The following provides a summary of the steps required to initialize the Hyper Protect instance. Please refer https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-initialize-hsm for more detail.
+After the HPCS instance has been provisioned it must be manually initialized before it can be used to encrypt services and volumes. The following provides a summary of the steps required to initialize the Hyper Protect instance. Please refer https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-initialize-hsm for more detail.
 
 ![HPCS initialization](https://cloud.ibm.com/docs-content/v1/content/eaa381661ad91d7720185625ae7b5a047a6dc41c/hs-crypto//image/hsm_initialization_flow.svg)
 
-## Install the TKE CLI plug-in
+### 1. Install the TKE CLI plug-in
 
-Install the `tke` plug-in to the IBM Cloud cli:
+Install the `tke` plug-in for the IBM Cloud cli:
 
 ```shell
 ibmcloud plugin install tke
@@ -41,17 +41,67 @@ ibmcloud plugin install tke
 ibmcloud plugin update tke
 ```
 
-## Set up the TKE environment
+### 2. Set up the TKE environment
 
-Set the environment variable `CLOUDTKEFILES` on your workstation to specify the directory where you want to save the master key part files and signature key files. The signature keys are used to sign TKE administrative commands.
+Set the `CLOUDTKEFILES` environment variable on your workstation to specify the directory where you want to save the master key part files and signature key files. The signature keys are used to sign TKE administrative commands.
 
-    On the Linux® operating system or MacOS, add the following line to the .bash_profile file:
+```shell
+export CLOUDTKEFILES=<local directory>
+```
 
-Export export CLOUDTKEFILES=<local directory>
+On the Linux® operating system or MacOS, that line can be added to the `~/.bash_profile` or `~/.zshrc` file if you want the setting to persist across terminal sessions.
 
-## To display the service instances and crypto units in the target resource group under the current user account, use the following command:
-### ibmcloud tke cryptounits
+### 3. Log in to IBM Cloud with the CLI
 
+Log into the region and resource group where the HPCS instance has been provisioned. If you are authenticating with your IBM Cloud API Key, the command would look like:
+
+```shell
+ibmcloud login --apikey "${APIKEY}" -r "${REGION}" -g "${RESOURCE_GROUP}"
+```
+
+### 4. List the crypto units for the HPCS instance
+
+Run the following command to list the crypto units that have been provisioned for the HPCS instance.
+
+```shell
+ibmcloud tke cryptounits
+```
+
+**Note:** If there are no crypto units available on the HPCS instance, follow the steps below in section X to add new crypto units.
+
+### 5. Create the signature key
+
+The following commands will add a signature key for the administrators of the HPCS instance. The first user added will be the overall admin of the instance. At least two administrators should be added to the instance.
+
+#### 5.1 Add each user to the instance
+
+1. Run the `sigkey-add` command - `ibmcloud tke sigkey-add`
+2. Provide the name of the administrator when prompted
+3. Provide a password for the administrator user
+
+#### 5.2 Associate the signature key to the crypto units
+
+1. Select the signature keys - `ibmcloud tke sigkey-sel`
+2. Provide the numbers for the signature keys at the prompt. E.g. `1 2` to select the first and second signature keys.
+3. Associate the signature key with the crypto unit - `ibmcloud tke cryptounit-admin-add`
+4. Enter the number for the crypto unit and provide the password for the user
+
+### 6. Set the Crypto Unit Threshold
+
+
+
+# Reference
+
+## List the service instances and crypto units
+
+To display the service instances and crypto units in the target resource group under the current user account, use the following command:
+
+```shell
+ibmcloud tke cryptounits
+```
+
+Example output:
+~~~~
 API endpoint:     https://cloud.ibm.com
 Region:           us-south
 User:             john.smith@in.abc.com
@@ -64,9 +114,9 @@ CRYPTO UNIT NUM   SELECTED   TYPE          LOCATION
 2                 false      OPERATIONAL   [us-south].[AZ3-CS9].[01].[15]   
 3                 false      RECOVERY      [us-south].[AZ3-CS9].[01].[14]   
 4                 false      RECOVERY      [us-east].[AZ1-CS1].[01].[07]   
+~~~~
 
-Note: all operational crypto units in a service instance must be configured the same.
-Use 'ibmcloud tke cryptounit-compare' to check how crypto units are configured.
+**Note:** All operational crypto units in a service instance must be configured the same. Use `ibmcloud tke cryptounit-compare` to check how crypto units are configured.
 
 ## To add extra crypto units to the selected crypto unit list, use the following command:
 ### ibmcloud tke cryptounit-add
